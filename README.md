@@ -45,6 +45,7 @@ Affects any Ink-based CLI that temporarily creates readline interfaces for featu
 
 ## Environment
 
+- OS: macOS 15.5 (Sequoia)
 - Bun: 1.2.18 (broken)
 - Node: 22.12.0 (works)
 - Dependencies: ink@6.0.1, react@19.1.0
