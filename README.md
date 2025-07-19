@@ -1,8 +1,8 @@
-# Bun stdin freeze: React effect cleanup + readline
+# Bun stdin freeze: Ink + readline.close()
 
 ## Bug
 
-When React effect cleanup calls `rl.close()`, stdin becomes unresponsive in Bun (but not Node.js) if Ink's `useInput` is active.
+Calling `rl.close()` after a delay causes stdin to become completely unresponsive in Bun (but not Node.js) when Ink's `useInput` is active.
 
 ## Reproduction
 
@@ -14,30 +14,29 @@ node index.mjs # Works correctly ✅
 
 ## What You'll See
 
-1. **0-2 seconds**: Type any key → see "[Input] keyname" logs
-2. **After 2 seconds**: "Closing readline interface..." message
+1. **First 100ms**: Type any key → see "[Input] keyname" logs
+2. **After 100ms**: "Closing readline..." message
 3. **In Bun**: No more input works, Ctrl+C doesn't exit
 4. **In Node**: Everything continues working
 
-## Root Cause
+## The Code
 
 ```javascript
-// Ink is handling stdin
+// 1. Ink is handling stdin
 useInput((input, key) => {
   if (key.ctrl && input === 'c') process.exit(0);
 });
 
-// React effect creates and cleans up readline
-useEffect(() => {
-  const rl = readline.createInterface({ input: stdin });
-  
-  return () => {
-    rl.close();  // ← This breaks stdin in Bun
-  };
-}, [dependency]);
+// 2. Create readline interface
+const rl = readline.createInterface({ input: stdin });
+
+// 3. Close it after a delay
+setTimeout(() => {
+  rl.close();  // ← This breaks stdin in Bun!
+}, 100);
 ```
 
-The bug only occurs when `rl.close()` is called from React's cleanup lifecycle.
+No React effects needed. Just Ink + readline + delay + close = freeze.
 
 ## Impact
 

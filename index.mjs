@@ -1,54 +1,34 @@
 #!/usr/bin/env node
 /**
- * Bun stdin freeze bug - Minimal reproduction
+ * Simplest reproduction: Ink + readline.close() after delay
  * 
- * BUG: When React effect cleanup calls rl.close(), stdin freezes in Bun
- * 
- * Run: bun index.mjs  → Stdin freezes after 2 seconds
- * Run: node index.mjs → Works correctly
+ * No React effects needed - just setTimeout
  */
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { render, Text, useInput, useStdin } from 'ink';
 import readline from 'readline';
 
 const App = () => {
-  const [active, setActive] = useState(true);
   const { stdin } = useStdin();
-
+  
+  // Ink handles stdin
   useInput((input, key) => {
     console.log(`[Input] ${key.name || input}`);
     if (key.ctrl && input === 'c') process.exit(0);
   });
 
-  useEffect(() => {
-    if (!active) return;
+  // Create readline, close after delay
+  const rl = readline.createInterface({ input: stdin });
+  
+  setTimeout(() => {
+    console.log('\nClosing readline...');
+    rl.close();  // This freezes Bun!
+    console.log('Bun: frozen ❌ | Node: works ✅\n');
+  }, 100);  // Even 100ms is enough
 
-    console.log('Creating readline interface...');
-    const rl = readline.createInterface({ input: stdin });
-
-    return () => {
-      console.log('Closing readline interface...');
-      rl.close();  // This line causes the freeze in Bun
-    };
-  }, [active, stdin]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      console.log('\nTriggering cleanup...');
-      setActive(false);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    const keepAlive = setInterval(() => {}, 1000);
-    return () => clearInterval(keepAlive);
-  }, []);
-
-  return React.createElement(Text, {}, 
-    `Active: ${active} - Type any key to test input`
-  );
+  setInterval(() => {}, 1000);
+  return React.createElement(Text, {}, 'Type any key');
 };
 
 render(React.createElement(App));
