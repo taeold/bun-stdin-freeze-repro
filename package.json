@@ -1,0 +1,14 @@
+{
+  "name": "bun-stdin-freeze-repro",
+  "version": "1.0.0",
+  "description": "Minimal reproduction of Bun stdin freeze bug with Ink and readline",
+  "type": "module",
+  "scripts": {
+    "test-bun": "bun index.mjs",
+    "test-node": "node index.mjs"
+  },
+  "dependencies": {
+    "ink": "^6.0.1",
+    "react": "^19.1.0"
+  }
+}
